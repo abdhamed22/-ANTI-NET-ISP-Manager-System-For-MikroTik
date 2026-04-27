@@ -2,7 +2,7 @@
 
 # 🌐 ISP Manager System (User Manager)
 
-![Version](https://img.shields.io/badge/Version-1.0.0-blue.svg)
+![Version](https://img.shields.io/badge/Version-1.2.0-blue.svg)
 ![Platform](https://img.shields.io/badge/Platform-Windows-lightgray.svg)
 ![Tech Stack](https://img.shields.io/badge/Tech-React_|_FastAPI_|_SQLite-success.svg)
 
