@@ -135,16 +135,59 @@ export function vAttributes(attrs: Attribute[]): ValidationResult {
   for (const a of attrs) {
     if (!a.key) continue;
     if (!(RADIUS_ATTRIBUTES as readonly string[]).includes(a.key)) return 'v.attribute';
-    // A comma or colon inside a value would corrupt the "Key:value,..." encoding.
-    if (!a.value || /[,:\s]/.test(a.value) || CONTROL_RE.test(a.value)) return 'v.attributeValue';
+    // A comma would split the "Key:value,Key2:value2" list. Colons are fine (the key ends
+    // at the first one), so IPv6 values and burst rate limits with spaces are allowed.
+    if (!a.value.trim() || a.value.includes(',') || CONTROL_RE.test(a.value)) return 'v.attributeValue';
   }
   return null;
+}
+
+// ---------------------------------------------------------------- per-user speed
+
+/** RADIUS attribute User Manager sends to the NAS to cap one subscriber's speed. */
+export const RATE_ATTR = 'Mikrotik-Rate-Limit';
+
+export interface UserSpeed {
+  download: string;
+  upload: string;
+}
+
+/**
+ * Splits a simple Mikrotik-Rate-Limit ("rx/tx", seen from the router: rx = the
+ * subscriber's upload, tx = their download) out of the attribute list. Advanced
+ * values with burst settings stay in the list untouched.
+ */
+export function splitSpeed(attrs: Attribute[]): { speed: UserSpeed; rest: Attribute[] } {
+  const i = attrs.findIndex((a) => a.key === RATE_ATTR);
+  if (i === -1) return { speed: { download: '', upload: '' }, rest: attrs };
+  const m = /^\s*([^\s/]+)(?:\/([^\s/]+))?\s*$/.exec(attrs[i].value);
+  if (!m) return { speed: { download: '', upload: '' }, rest: attrs };
+  const upload = m[1];
+  const download = m[2] ?? m[1];
+  return { speed: { download, upload }, rest: attrs.filter((_, j) => j !== i) };
+}
+
+/** Puts the speed back as a Mikrotik-Rate-Limit attribute (replacing any existing one). */
+export function mergeSpeed(rest: Attribute[], speed: UserSpeed): Attribute[] {
+  const down = speed.download.trim();
+  const up = speed.upload.trim();
+  if (!down && !up) return rest;
+  // One value given: RouterOS applies the same rate to both directions.
+  const value = `${up || down}/${down || up}`;
+  return [...rest.filter((a) => a.key !== RATE_ATTR), { key: RATE_ATTR, value }];
+}
+
+/** Short "↓ 400M ↑ 400M" label for lists, or '' when the user has no own speed. */
+export function speedLabel(raw: string | undefined): string {
+  const { speed } = splitSpeed(parseAttributes(raw));
+  if (!speed.download && !speed.upload) return '';
+  return `↓ ${speed.download} ↑ ${speed.upload}`;
 }
 
 export function formatAttributes(attrs: Attribute[]): string {
   return attrs
     .filter((a) => a.key)
-    .map((a) => `${a.key}:${a.value}`)
+    .map((a) => `${a.key}:${a.value.trim()}`)
     .join(',');
 }
 

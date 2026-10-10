@@ -7,9 +7,10 @@ import { errorMessage, useI18n, type MessageKey } from '../i18n/index.tsx';
 import { PATHS, profilePrice } from '../core/um.ts';
 import { VOUCHER_LIMITS, generateBatch, provisionVouchers, type Voucher, type VoucherStatus } from '../core/vouchers.ts';
 import { formatMoney } from '../core/settings.ts';
-import { formatAttributes, vAttributes, vIntRange, vName, type Attribute } from '../core/validate.ts';
+import { formatAttributes, mergeSpeed, vAttributes, vIntRange, vName, vRate, type Attribute, type UserSpeed } from '../core/validate.ts';
 import { shareFile, stamp } from '../core/platform/files.ts';
 import { AttributesEditor } from '../ui/AttributesEditor.tsx';
+import { SpeedFields } from '../ui/SpeedFields.tsx';
 import { vouchersToPdf } from '../ui/voucherSheet.ts';
 import { Badge, CopyButton, Empty, Fab, Field, Notice, PageHeader, SearchBar, Segmented, SelectField, Sheet, confirm, matches } from '../ui/components.tsx';
 
@@ -231,6 +232,7 @@ function GenerateSheet(props: {
   const [prefix, setPrefix] = useState('');
   const [len, setLen] = useState('8');
   const [attrs, setAttrs] = useState<Attribute[]>([]);
+  const [speed, setSpeed] = useState<UserSpeed>({ download: '', upload: '' });
   const [touched, setTouched] = useState(false);
   const e = {
     qty: vIntRange(qty, VOUCHER_LIMITS.minQty, VOUCHER_LIMITS.maxQty) as MessageKey | null,
@@ -238,6 +240,8 @@ function GenerateSheet(props: {
     prefix: (prefix ? vName(prefix) : null) as MessageKey | null,
     len: vIntRange(len, VOUCHER_LIMITS.minLen, VOUCHER_LIMITS.maxLen) as MessageKey | null,
     attrs: vAttributes(attrs) as MessageKey | null,
+    download: vRate(speed.download) as MessageKey | null,
+    upload: vRate(speed.upload) as MessageKey | null,
   };
   const invalid = Object.values(e).some(Boolean);
   const show = (k: keyof typeof e) => (touched ? e[k] : null);
@@ -257,7 +261,7 @@ function GenerateSheet(props: {
             disabled={props.busy}
             onClick={() => {
               setTouched(true);
-              if (!invalid) void props.onGenerate({ quantity: Number(qty), profile, prefix: prefix.trim(), length: Number(len), attributes: formatAttributes(attrs) });
+              if (!invalid) void props.onGenerate({ quantity: Number(qty), profile, prefix: prefix.trim(), length: Number(len), attributes: formatAttributes(mergeSpeed(attrs, speed)) });
             }}
           >
             {props.busy ? t('c.saving') : t('c.generate')}
@@ -278,6 +282,7 @@ function GenerateSheet(props: {
         <Field label={t('vc.length')} value={len} onChange={setLen} ltr inputMode="numeric" error={show('len')} hint={`${VOUCHER_LIMITS.minLen}–${VOUCHER_LIMITS.maxLen}`} />
       </div>
       <Field label={`${t('vc.prefix')} (${t('c.optional')})`} value={prefix} onChange={setPrefix} ltr error={show('prefix')} placeholder="NET-" />
+      <SpeedFields value={speed} onChange={setSpeed} errors={{ download: show('download'), upload: show('upload') }} />
       <AttributesEditor value={attrs} onChange={setAttrs} error={show('attrs') ? t(e.attrs!) : null} />
     </Sheet>
   );

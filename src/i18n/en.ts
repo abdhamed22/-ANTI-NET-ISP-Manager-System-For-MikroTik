@@ -177,6 +177,8 @@ export const en = {
   'users.devices': 'Devices',
   'users.count': '{n} subscribers',
   'users.passwordHidden': 'hidden by router',
+  'users.speed': 'Speed for this subscriber',
+  'users.speedHint': 'Saved as Mikrotik-Rate-Limit (e.g. 400M). Fill one box to use the same speed both ways. Leave both empty to use the speed from the profile limitation.',
 
   // activations
   'act.start': 'New subscription',

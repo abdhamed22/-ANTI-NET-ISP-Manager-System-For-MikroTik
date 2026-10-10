@@ -7,9 +7,23 @@ import { useI18n, type MessageKey } from '../i18n/index.tsx';
 import { PATHS, currentSubscription, groupByUser, idOf } from '../core/um.ts';
 import { isTrue, type RouterRecord } from '../core/routeros/client.ts';
 import { can } from '../core/staff.ts';
-import { formatAttributes, parseAttributes, vAttributes, vIntRange, vName, vSecret, type Attribute } from '../core/validate.ts';
+import {
+  formatAttributes,
+  mergeSpeed,
+  parseAttributes,
+  speedLabel,
+  splitSpeed,
+  vAttributes,
+  vIntRange,
+  vName,
+  vRate,
+  vSecret,
+  type Attribute,
+  type UserSpeed,
+} from '../core/validate.ts';
 import { secureRandomString } from '../core/vouchers.ts';
 import { AttributesEditor } from '../ui/AttributesEditor.tsx';
+import { SpeedFields } from '../ui/SpeedFields.tsx';
 import { Badge, CopyButton, Empty, ErrorBox, Fab, Field, Loading, PageHeader, RefreshButton, SearchBar, Sheet, Toggle, confirm, matches } from '../ui/components.tsx';
 import { SubscriptionBadge } from './Activations.tsx';
 
@@ -107,6 +121,7 @@ export function Users() {
                 <div className="item-sub">
                   <SubscriptionBadge sub={sub} />
                   {sub?.profile && <span dir="ltr">{sub.profile}</span>}
+                  {speedLabel(u.attributes) && <span dir="ltr">{speedLabel(u.attributes)}</span>}
                   <span>
                     {t('users.devices')}: <b dir="ltr">{!u['shared-users'] || u['shared-users'] === 'unlimited' ? '∞' : u['shared-users']}</b>
                   </span>
@@ -141,7 +156,9 @@ function UserForm(props: { user: RouterRecord | null; onClose: () => void; onSav
   const [name, setName] = useState(u?.name ?? '');
   const [password, setPassword] = useState('');
   const [shared, setShared] = useState(!u?.['shared-users'] || u['shared-users'] === 'unlimited' ? '' : u['shared-users']);
-  const [attrs, setAttrs] = useState<Attribute[]>(parseAttributes(u?.attributes));
+  const initial = splitSpeed(parseAttributes(u?.attributes));
+  const [speed, setSpeed] = useState<UserSpeed>(initial.speed);
+  const [attrs, setAttrs] = useState<Attribute[]>(initial.rest);
   const [callerId, setCallerId] = useState(u?.['caller-id'] ?? '');
   const [disabled, setDisabled] = useState(isTrue(u?.disabled));
   const [touched, setTouched] = useState(false);
@@ -153,6 +170,8 @@ function UserForm(props: { user: RouterRecord | null; onClose: () => void; onSav
     shared: vIntRange(shared, 1, 1000, false) as MessageKey | null,
     attrs: vAttributes(attrs) as MessageKey | null,
     callerId: vName(callerId, false) as MessageKey | null,
+    download: vRate(speed.download) as MessageKey | null,
+    upload: vRate(speed.upload) as MessageKey | null,
   };
   const invalid = Object.values(errors).some(Boolean);
 
@@ -162,10 +181,11 @@ function UserForm(props: { user: RouterRecord | null; onClose: () => void; onSav
     const data: Record<string, string> = {
       name: name.trim(),
       'shared-users': shared.trim() || 'unlimited',
-      attributes: formatAttributes(attrs),
-      'caller-id': callerId.trim(),
+      attributes: formatAttributes(mergeSpeed(attrs, speed)),
       disabled: disabled ? 'yes' : 'no',
     };
+    // Only send caller-id when there is one to set or clear.
+    if (callerId.trim() || u?.['caller-id']) data['caller-id'] = callerId.trim();
     if (password) data.password = password;
     const ok = await run(
       () => (u ? session.client.set(PATHS.users, idOf(u), data) : session.client.add(PATHS.users, data)),
@@ -221,6 +241,7 @@ function UserForm(props: { user: RouterRecord | null; onClose: () => void; onSav
       />
       <Field label={t('users.sharedUsers')} value={shared} onChange={setShared} ltr inputMode="numeric" hint={t('users.sharedHint')} error={show('shared')} />
       <Field label={`${t('users.callerId')} (${t('c.optional')})`} value={callerId} onChange={setCallerId} ltr error={show('callerId')} />
+      <SpeedFields value={speed} onChange={setSpeed} errors={{ download: show('download'), upload: show('upload') }} />
       <AttributesEditor value={attrs} onChange={setAttrs} error={show('attrs') ? t(errors.attrs!) : null} />
       <Toggle label={t('users.disable')} checked={disabled} onChange={setDisabled} />
     </Sheet>

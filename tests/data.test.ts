@@ -169,3 +169,40 @@ test('validators', () => {
   assert.equal(formatMoney(25000, 'IQD'), '25,000 IQD');
   assert.equal(formatMoney(15, 'USD'), '$15.00');
 });
+
+test('per-user speed maps to Mikrotik-Rate-Limit (rx/tx = upload/download)', async () => {
+  const { splitSpeed, mergeSpeed, speedLabel, RATE_ATTR } = await import('../src/core/validate.ts');
+  // Same format WinBox shows: Mikrotik-Rate-Limit : 400M/400M
+  const parsed = parseAttributes('Framed-Pool:pool1,Mikrotik-Rate-Limit:20M/100M');
+  const { speed, rest } = splitSpeed(parsed);
+  assert.deepEqual(speed, { download: '100M', upload: '20M' });
+  assert.deepEqual(rest, [{ key: 'Framed-Pool', value: 'pool1' }]);
+  assert.equal(formatAttributes(mergeSpeed(rest, speed)), 'Framed-Pool:pool1,Mikrotik-Rate-Limit:20M/100M');
+  // One box filled: same rate both ways.
+  assert.equal(formatAttributes(mergeSpeed([], { download: '400M', upload: '' })), 'Mikrotik-Rate-Limit:400M/400M');
+  // Both empty: no attribute at all (profile limitation decides the speed).
+  assert.equal(formatAttributes(mergeSpeed(rest, { download: '', upload: '' })), 'Framed-Pool:pool1');
+  // A single-rate value applies to both directions.
+  assert.deepEqual(splitSpeed(parseAttributes('Mikrotik-Rate-Limit:10M')).speed, { download: '10M', upload: '10M' });
+  // Burst settings are kept as-is in the advanced list and still validate.
+  const burst = parseAttributes('Mikrotik-Rate-Limit:10M/10M 20M/20M 8M/8M 10/10');
+  assert.equal(splitSpeed(burst).rest[0].key, RATE_ATTR);
+  assert.equal(vAttributes(burst), null);
+  // IPv6 values contain colons and are valid.
+  assert.equal(vAttributes(parseAttributes('Framed-IPv6-Prefix:2001:db8::/64')), null);
+  assert.equal(speedLabel('Mikrotik-Rate-Limit:400M/400M'), '↓ 400M ↑ 400M');
+  assert.equal(speedLabel(''), '');
+});
+
+test('subscriber with a speed is stored the way WinBox shows it', async () => {
+  const { mergeSpeed } = await import('../src/core/validate.ts');
+  const c = m.client();
+  await c.add('user-manager/user', {
+    name: 'fast1',
+    password: 'pw-fast1',
+    'shared-users': '1',
+    attributes: formatAttributes(mergeSpeed([], { download: '400M', upload: '400M' })),
+  });
+  const u = m.state.menus['user-manager/user'].find((x) => x.name === 'fast1');
+  assert.equal(u?.attributes, 'Mikrotik-Rate-Limit:400M/400M');
+});

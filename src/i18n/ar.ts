@@ -170,6 +170,8 @@ export const ar: Record<MessageKey, string> = {
   'users.devices': 'الأجهزة',
   'users.count': '{n} مشترك',
   'users.passwordHidden': 'مخفية من الراوتر',
+  'users.speed': 'سرعة هذا المشترك',
+  'users.speedHint': 'تنحفظ بخاصية Mikrotik-Rate-Limit (مثل 400M). إذا كتبت وحدة بس تنطبق على التحميل والرفع. اتركهم فارغين إذا السرعة من قيود البروفايل.',
 
   'act.start': 'اشتراك جديد',
   'act.renew': 'تجديد',
