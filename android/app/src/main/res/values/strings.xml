@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">ANTI-NET ISP Manager</string>
+    <string name="title_activity_main">ANTI-NET ISP Manager</string>
+    <string name="package_name">net.antinet.ispmanager</string>
+    <string name="custom_url_scheme">net.antinet.ispmanager</string>
+</resources>

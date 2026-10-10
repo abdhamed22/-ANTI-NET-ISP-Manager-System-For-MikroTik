@@ -1,0 +1,16 @@
+node_modules/
+dist/
+*.log
+.DS_Store
+.vite/
+coverage/
+test-results/
+# Android build outputs
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/.idea/
+android/capacitor-cordova-android-plugins/build/
+*.keystore
+*.jks

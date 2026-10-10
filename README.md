@@ -1,50 +1,140 @@
-# ANTI-NET ISP-Manager-System For MikroTik
+# ANTI-NET ISP Manager — MikroTik User Manager على الموبايل
 
-# 🌐 ISP Manager System (User Manager)
+![Version](https://img.shields.io/badge/Version-2.0.0-blue.svg)
+![Platform](https://img.shields.io/badge/Platform-Android-green.svg)
+![RouterOS](https://img.shields.io/badge/RouterOS-7.9%2B-orange.svg)
 
-![Version](https://img.shields.io/badge/Version-1.2.0-blue.svg)
-![Platform](https://img.shields.io/badge/Platform-Windows-lightgray.svg)
-![Tech Stack](https://img.shields.io/badge/Tech-React_|_FastAPI_|_SQLite-success.svg)
+[English below ↓](#english)
 
-## 📌 Overview
-**ISP Manager** is a comprehensive, standalone desktop application engineered specifically for Internet Service Providers (ISPs) and Network Operations Center (NOC) teams. 
+تطبيق أندرويد **مستقل** لإدارة **User Manager** على راوترات مايكروتك. يشتغل على الموبايل لوحده، **بدون كمبيوتر وبدون سيرفر**: يتصل مباشرة بالراوتر عن طريق RouterOS REST API.
 
-Developed to bridge the gap between network infrastructure and daily operations, this system provides a secure, user-friendly graphical interface to manage MikroTik routers, monitor active PPPoE/Hotspot users, and control technical support permissions without exposing direct Winbox access.
+## المزايا
 
-## 🚀 Key Features
-* **MikroTik API Integration:** Direct, real-time communication with RouterOS for user provisioning and monitoring.
-* **Role-Based Access Control (RBAC):** Distinct permission levels (Admin vs. Support) to ensure network security and prevent unauthorized configuration changes.
-* **Local & Secure Database:** Utilizes an embedded SQLite database, ensuring all financial and subscriber data remains strictly local and portable.
-* **Zero-Dependency Deployment:** Packaged as a standalone Windows executable (`.exe`) using PyInstaller and Inno Setup, requiring no prior Python or Node.js installations on the client's machine.
-* **Modern UI/UX:** Built with React and TailwindCSS for a responsive, dark-themed dashboard.
+- **المشتركين**: إضافة وتعديل وحذف، وعدد الأجهزة بنفس الوقت، و**سرعة خاصة لكل مشترك** (تنحفظ بخاصية `Mikrotik-Rate-Limit` مثل WinBox)، وخصائص RADIUS، وربط بـ MAC.
+- **الاشتراكات**: اشتراك جديد، وتجديد (يبدأ الآن أو بعد انتهاء الحالي)، وإلغاء، مع فلترة (فعّال، منتهي، بدون اشتراك).
+- **المتصلين الآن** مع قطع اتصال حقيقي، و**سجل الجلسات**.
+- **الإعدادات الفنية** (للمدير): الراوترات (NAS)، والبروفايلات والأسعار، والقيود والسرعات، وربط القيود بالبروفايلات حسب الوقت والأيام.
+- **الكروت**: توليد برموز عشوائية آمنة، وتفعيلها على الراوتر، وطباعة PDF (مع الشعار واسم الشبكة بالعربي).
+- **المبيعات**: سجل بكل عملية بيع، ومبيعات اليوم وآخر 7 أيام، وتصدير CSV.
+- **حسابات الموظفين**: مدير، أو دعم فني، أو مشاهد فقط، والراوتر نفسه هو اللي يطبّق الصلاحيات.
+- **النسخ الاحتياطي والاسترجاع**: الاسترجاع ما يحذف شي من الراوتر، ويدعم ملف `anti-net-backup.json` مال نسخة الويندوز القديمة.
+- واجهة **عربي وإنجليزي** (من اليمين لليسار)، ووضع ليلي ونهاري، ومصممة لشاشة الموبايل.
 
-## ⚠️ System Prerequisites
-To ensure full functionality and seamless communication with your network hardware, the following requirements must be met:
-* **RouterOS Version:** The target MikroTik router must be running **RouterOS v7.0 or higher**.
-* **User Manager:** The MikroTik **User Manager** package must be installed, configured, and active on the router.
+## تجهيز الراوتر (مرة وحدة)
 
-## 🛠️ Technology Stack
-* **Backend:** Python 3.11, FastAPI, Uvicorn.
-* **Frontend:** React.js, Vite, TailwindCSS.
-* **Database:** SQLite (SQLAlchemy ORM).
-* **Packaging:** PyInstaller, Inno Setup Compiler.
+يحتاج **RouterOS 7.9 أو أحدث** مع حزمة **User Manager**. نفّذ هذه الأوامر بالـ Terminal (غيّر الشبكة `192.168.88.0/24` لشبكتك):
 
-## 📥 Download & Installation
-You can download the latest compiled version of the software without needing to build it from source.
+```
+/user-manager set enabled=yes
+/certificate add name=antinet-https common-name=antinet-router days-valid=3650 key-usage=digital-signature,key-encipherment,tls-server
+/certificate sign antinet-https
+/ip service set www-ssl certificate=antinet-https disabled=no address=192.168.88.0/24
+/certificate print detail where name=antinet-https
+```
 
-1. Navigate to the [Releases](../../releases) tab on the right side of this repository.
-2. Download the `ISP.Manager.Setup.exe` file.
-3. Run the installer and follow the standard setup wizard.
-4. The application server will start in the background and automatically open the dashboard in your default web browser.
+الأمر الأخير يطلّع **fingerprint** الشهادة. أول مرة تدخل، التطبيق يعرض لك بصمة الشهادة، فتقارنها بهاي وتضغط "متطابقة — أثق بها".
 
-**Default Credentials:**
-* **Username:** admin
-* **Password:** password123
+بعدها ادخل بحساب المدير، وسوِّ حساب لكل موظف من صفحة **حسابات الموظفين** داخل التطبيق. لا تستخدم حساب `admin` الأساسي بالشغل اليومي.
+
+## التثبيت
+
+1. افتح تبويب **Actions** بالمستودع، واختار آخر تشغيل ناجح لـ **Build Android APK**.
+2. نزّل الملف من قسم **Artifacts** (اسمه `anti-net-isp-manager-…apk`).
+3. افتحه على الموبايل، ووافق على "التثبيت من مصادر غير معروفة".
+
+> إذا اسم الملف بيه `temporary`، معناه انبنى بمفتاح توقيع مؤقت. يشتغل عادي، بس كل نسخة جديدة تحتاج تمسح القديمة قبل التثبيت (وتنمسح معها الكروت وسجل المبيعات المحفوظة على الهاتف، فسوِّ نسخة احتياطية قبلها). للتحديث بدون مسح، أضف مفتاح توقيع ثابت (شوف [مفتاح التوقيع](#مفتاح-التوقيع)).
+
+## الأمان: شنو تغيّر عن نسخة الويندوز v1.2.0
+
+| المشكلة بالنسخة القديمة | الحل بهذه النسخة |
+|---|---|
+| الصلاحيات تعتمد على هيدر `X-User-Role` يرسله المتصفح نفسه، فأي شخص يكدر يصير أدمن | كل موظف يدخل بحسابه على الراوتر، والراوتر هو اللي يتحقق من كل طلب |
+| `GET /api/settings` يرجّع باسورد المايكروتك بدون تسجيل دخول | ماكو سيرفر أصلاً. كلمة المرور تبقى بالذاكرة، أو تنحفظ مشفرة بـ Android Keystore إذا اخترت "تذكّرني" |
+| السيرفر مفتوح على `0.0.0.0:8000` لكل الشبكة | ماكو أي منفذ مفتوح على الهاتف |
+| الاتصال بالراوتر على 8728 بدون تشفير | HTTPS مع تثبيت بصمة شهادة الراوتر. أي تغيير بالشهادة يوقف الاتصال ويحذرك من تنصت محتمل |
+| باسوردات SHA-256 بدون salt، و`admin/password123` منشور | التطبيق ما يخزن باسوردات موظفين أصلاً، ويحذّر إذا دخلت بحساب `admin` |
+| الكروت تتولد بـ `Math.random` | `crypto.getRandomValues` مع rejection sampling |
+| الاسترجاع يمسح كل شي من الراوتر أول وبعدين يرجّع | الاسترجاع يضيف الناقص بس وما يحذف شي، والمسح الكامل ياخذ نسخة احتياطية تلقائياً قبلها |
+
+### أخطاء وظيفية انصلحت
+
+- **القيود (Limitations)**: النسخة القديمة كانت تحط السرعة بنفس الوقت كـ `download-limit` (وهذا حد كمية، مو سرعة)، فكتابة `10M` كانت تقطع المشترك بعد ما ينزّل 10 ميغابايت. وكمان التحميل والرفع كانوا مقلوبين. هسه: التحميل = `rate-limit-tx`، والرفع = `rate-limit-rx`، وحدود الكمية حقول منفصلة.
+- **قطع الاتصال**: النسخة القديمة كانت تحذف سجل الجلسة من User Manager، وهذا ما يقطع أحد. هسه التطبيق يقطع اتصال PPP/Hotspot الفعلي.
+- **التجديد**: النسخة القديمة تحذف الاشتراك القديم قبل لا تضيف الجديد، فإذا فشلت الإضافة يبقى المشترك بدون اشتراك. هسه يضيف الجديد أولاً.
+- **الكروت**: إذا فشل إنشاء الاشتراك، ينحذف المستخدم اللي انخلق حتى ما يبقى حساب ناقص.
+- **المتصلين الآن**: يطلب الجلسات الفعالة بس من الراوتر، بدل ما يسحب كل السجل كل كم ثانية.
+
+## الصلاحيات
+
+| الصلاحية | مجموعة RouterOS | شنو يكدر يسوي |
+|---|---|---|
+| مدير | `full` | كل شي |
+| دعم فني | `antinet-support` (`read,write,test,password,api,rest-api`) | المشتركين، والاشتراكات، والجلسات، والكروت |
+| مشاهد | `antinet-viewer` (`read,password,api,rest-api`) | يشوف بس |
+
+مجموعتا الدعم والمشاهد ما بيهن Winbox ولا SSH ولا WebFig ولا `policy` ولا `sensitive`. **انتبه**: صلاحيات RouterOS عامة، مو لكل قائمة بروحها. يعني موظف الدعم يكدر بالـ API يغيّر أي إعداد يسمح به `write`، والتطبيق بس يخفي عنه الصفحات. لذلك اربط حساباتهم بعنوان الشبكة الداخلية من حقل "مسموح الدخول من".
+
+## حدود يجب معرفتها
+
+- **سجل المبيعات والكروت غير المفعّلة محفوظة على الهاتف نفسه**، لأن RouterOS ما بيه مكان يخزنها. إذا عندك أكثر من موظف بأكثر من هاتف، كل هاتف يحفظ مبيعاته، وتجمعها بالتصدير.
+- يشتغل على **أندرويد فقط**. نسخة iPhone تحتاج جهاز Mac وحساب Apple Developer.
+- تم الاختبار على راوتر وهمي يحاكي RouterOS REST API، وعلى منطق تثبيت الشهادة. **جرّبه على راوترك قبل الاعتماد عليه بالشغل.**
+
+## التطوير
+
+```bash
+npm ci
+npm test          # unit tests against mock/server.mjs (a mock RouterOS REST API)
+npm run mock      # mock router on 127.0.0.1:8729 (admin/admin123, support1/support123)
+npm run dev       # UI at http://127.0.0.1:5173 (proxies /rest to the mock)
+npm run build     # type check + production build
+npx cap sync android && (cd android && ./gradlew assembleRelease)
+```
+
+لتجربة الواجهة بالمتصفح على راوتر حقيقي: `ROUTER_URL=https://192.168.88.1 npm run dev`.
+
+### مفتاح التوقيع
+
+حتى تكدر تحدّث التطبيق بدون ما تمسحه، سوِّ مفتاح مرة وحدة واحفظه بمكان آمن:
+
+```bash
+keytool -genkeypair -v -keystore antinet-release.jks -alias antinet -keyalg RSA -keysize 3072 -validity 10000
+base64 -w0 antinet-release.jks   # انسخ الناتج
+```
+
+بعدها بـ GitHub → Settings → Secrets and variables → Actions أضف:
+`ANDROID_KEYSTORE_BASE64`، و`ANDROID_KEYSTORE_PASSWORD`، و`ANDROID_KEY_ALIAS`، و`ANDROID_KEY_PASSWORD`.
+
+## هيكل المشروع
+
+```
+src/core/          منطق التطبيق (بدون واجهة): REST client، User Manager، الموظفين، الكروت، المبيعات، النسخ الاحتياطي
+src/core/platform/ ربط Capacitor: الاتصال، التخزين، مشاركة الملفات
+src/pages/         صفحات الواجهة
+src/i18n/          الترجمة عربي/إنجليزي
+android/…/RouterLinkPlugin.java   HTTP أصلي مع تثبيت الشهادة + Keystore
+mock/server.mjs    راوتر وهمي للتطوير والاختبار
+tests/             اختبارات
+```
 
 ---
 
-## 👨‍💻 About the Developer
-ENG.Abdulhamed.H
-Developed by a Computer Engineering Technology graduate  with hands-on leadership experience in FTTH/GPON infrastructure and telecommunications. Currently pursuing advanced Cisco (CCNP) and MikroTik certifications, with a strong focus on network automation and NOC L2 operations.
+<a id="english"></a>
 
-If you are interested in network automation, IT infrastructure, or discussing NOC operations, feel free to connect!
+## English
+
+Standalone Android app for **MikroTik User Manager** (RouterOS **7.9+**). It talks straight to the router's REST API. No PC, no server.
+
+- Each staff member signs in with **their own RouterOS account**. Roles (admin, support, viewer) come from the account's group, and the router enforces every permission.
+- HTTPS is verified by **pinning the router's certificate fingerprint**, which the user confirms on first connect (trust on first use). A changed certificate stops the connection.
+- Passwords are never stored unless the user picks "remember", and then only encrypted with an Android Keystore AES-GCM key. Backups are disabled.
+- Pages: subscribers, subscriptions (new, renew now or queued, cancel), live sessions with a real PPP/Hotspot disconnect, session history, NAS routers, profiles, limitations, profile limits, vouchers (secure generation, push to the router, PDF), sales log with CSV export, staff accounts, backup and merge restore (imports v1 Windows backups too), and erase with an automatic safety backup.
+- Arabic (RTL) and English, dark and light theme.
+
+**Router setup:** run the commands in the Arabic section above. They enable User Manager, create a self-signed HTTPS certificate, enable `www-ssl` for the LAN only, and print the fingerprint.
+
+**Install:** download the APK from the latest successful **Build Android APK** run under **Actions → Artifacts**. Add the `ANDROID_KEYSTORE_*` secrets to get stable-signed builds that can update in place.
+
+**Limits:** the sales log and unsold vouchers are stored per phone, because RouterOS has no place to keep them. RouterOS policies are not per-menu, so support staff could use the API outside the app; restrict them with the allowed-address field. Tested against a mock RouterOS REST API and on the JVM for certificate pinning. Verify it on your own router before relying on it.
+
+**v1.2.0 (Windows) is superseded.** Its local server trusted a client-sent `X-User-Role` header, served the router password unauthenticated on `0.0.0.0:8000`, and set speed values as byte quotas. Do not keep it running on a shared network.
