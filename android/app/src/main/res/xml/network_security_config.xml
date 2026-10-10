@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The app talks only to the MikroTik router on the local network.
+  - HTTPS to the router is verified by a pinned certificate fingerprint in RouterLinkPlugin,
+    so user-installed CAs are never trusted.
+  - Cleartext is allowed because routers are reached by arbitrary LAN IPs and the
+    user may choose HTTP; the app shows a permanent warning when they do.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

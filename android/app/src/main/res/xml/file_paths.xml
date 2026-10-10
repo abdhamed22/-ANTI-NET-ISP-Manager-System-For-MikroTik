@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Only files the app writes to its cache (exported PDFs, CSV, backups) can be shared. -->
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <cache-path name="shared" path="." />
+</paths>

@@ -1,0 +1,10 @@
+{
+  "appId": "net.antinet.ispmanager",
+  "appName": "ANTI-NET ISP Manager",
+  "webDir": "dist",
+  "android": {
+    "allowMixedContent": false,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": false
+  }
+}
